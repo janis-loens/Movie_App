@@ -1,5 +1,6 @@
 # type: ignore
 from sqlalchemy import create_engine, text
+import os
 
 
 
@@ -11,7 +12,10 @@ def init_storage() -> None:
         None
     """
     global engine
-    DB_URL = f"sqlite:///databases/movies.db"
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    db_path = os.path.join(base_dir, "..", "databases", "movies.db")
+    os.makedirs(os.path.dirname(db_path), exist_ok=True)
+    DB_URL = f"sqlite:///{db_path}"
     engine = create_engine(DB_URL, echo=False)
     create_table()
 
