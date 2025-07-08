@@ -106,10 +106,11 @@ def add_movie(movie_name: str, user_id: int) -> None:
     movie_title = movie_data.get("Title", "Unknown")
     movie_year = movie_data.get("Year", "Unknown")
     movie_rating = movie_data.get("imdbRating", "Unknown")
+    movie_imdb_id = movie_data.get("imdbID", "Unknown")
     poster_image_url = movie_data.get("Poster", "Unknown")
     if movie_title == "Unknown" or movie_year == "Unknown" or movie_rating == "Unknown":
         raise ValueError("Movie data not found. Please check the movie name.")
-    storage.add_movie(movie_title, movie_year, movie_rating, poster_image_url, user_id)
+    storage.add_movie(movie_title, movie_year, movie_rating, poster_image_url, user_id, movie_imdb_id)
 
 
 def delete_movie(movie_name: str, user_id: int) -> None:
@@ -363,7 +364,9 @@ def generate_website(name: str, user_id: int) -> None:
         movies_html += f"""
         <li>
             <div class="movie">
-                <img class="movie-poster" src="{data['poster_image_url']}" alt="{movie} poster">
+                <a href="https://www.imdb.com/title/{data['imdb_id']}" target="_blank">
+                    <img class="movie-poster" src="{data['poster_image_url']}" alt="{movie} poster">
+                </a>
                 <div class="movie-title">{movie}</div>
                 <div class="movie-rating">IMDb: {data['rating']}</div>
                 <div class="movie-year">{data['year']}</div>

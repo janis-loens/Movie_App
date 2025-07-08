@@ -36,6 +36,7 @@ def create_table() -> None:
                 year INTEGER NOT NULL,
                 rating REAL NOT NULL,
                 poster_image_url TEXT,
+                imdb_id TEXT UNIQUE,
                 FOREIGN KEY (user_id) REFERENCES users(id)
             );
         """))
@@ -86,13 +87,13 @@ def list_movies(user_id: int) -> dict:
         dict: A dictionary where the keys are movie titles and the values are dictionaries with year and rating.
     """
     with engine.connect() as connection:
-        result = connection.execute(text("SELECT title, year, rating, poster_image_url FROM movies WHERE user_id = :user_id"), {
+        result = connection.execute(text("SELECT title, year, rating, poster_image_url, imdb_id FROM movies WHERE user_id = :user_id"), {
             "user_id": user_id
         })
         movies = result.fetchall()
-    return {row[0]: {"year": row[1], "rating": row[2], "poster_image_url": row[3]} for row in movies}
+    return {row[0]: {"year": row[1], "rating": row[2], "poster_image_url": row[3], "imdb_id": row[4]} for row in movies}
 
-def add_movie(title: str, year: int, rating: float, poster_image_url: str, user_id: int) -> None:
+def add_movie(title: str, year: int, rating: float, poster_image_url: str, user_id: int, imdb_id: str) -> None:
     """
     Add a new movie to the database.
     Args:
@@ -106,14 +107,15 @@ def add_movie(title: str, year: int, rating: float, poster_image_url: str, user_
     with engine.connect() as connection:
         try:
             connection.execute(text("""
-                INSERT INTO movies (title, year, rating, poster_image_url, user_id)
-                VALUES (:title, :year, :rating, :poster_image_url, :user_id)
+                INSERT INTO movies (title, year, rating, poster_image_url, user_id, imdb_id)
+                VALUES (:title, :year, :rating, :poster_image_url, :user_id, :imdb_id)
             """), {
                 "title": title,
                 "year": year,
                 "rating": rating,
                 "user_id": user_id,
-                "poster_image_url": poster_image_url
+                "poster_image_url": poster_image_url,
+                "imdb_id": imdb_id,
             })
             connection.commit()
             print(f"Movie '{title}' added successfully.")
