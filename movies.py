@@ -2,8 +2,8 @@
 import random
 import os
 from statistics import median as get_median
-import movie_storage_sql as storage
-import API_communication as api
+import data.movie_storage_sql as storage
+import data.API_communication as api
 
 def pause() -> None:
     """
