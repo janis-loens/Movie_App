@@ -5,6 +5,7 @@ from statistics import median as get_median
 import data.movie_storage_sql as storage
 import data.API_communication as api
 
+
 def pause() -> None:
     """
     Pauses program execution to give the user time to read the output.
@@ -31,7 +32,7 @@ def get_valid_name() -> str:
         movie_name = input("Enter the movie name: ").strip()
         if not movie_name:
             raise ValueError("You have to enter a movie name.")
-        if movie_name not in storage.list_movies():
+        if movie_name not in storage.list_movies(user_id):
             raise KeyError(f"Movie '{movie_name}' does not exist in the database.")
         return movie_name
 
@@ -56,7 +57,7 @@ def get_valid_rating() -> float:
             print("Invalid rating. Please enter a number between 0.0 and 10.0.")
 
 
-def list_movies() -> None:
+def list_movies(user_id: int) -> None:
     """
     Retrieve and display all movies from the database.
 
@@ -65,7 +66,7 @@ def list_movies() -> None:
     Raises:
         ValueError: If no movies are found in the database.
     """
-    movies = storage.list_movies()
+    movies = storage.list_movies(user_id)
     if not movies:
         raise ValueError("No movies found in the database.")
     print(f"{len(movies)} movies in total")
@@ -73,7 +74,7 @@ def list_movies() -> None:
         print(f"{movie} ({data['year']}): {data['rating']}")
 
 
-def add_movie(movie_name: str) -> None:
+def add_movie(movie_name: str, user_id: int) -> None:
     """
     Add a movie to the movie database, unless it is already in the database.
 
@@ -91,7 +92,7 @@ def add_movie(movie_name: str) -> None:
     """
     if not movie_name:
         raise ValueError("Movie name must be provided.")
-    movies = storage.list_movies()
+    movies = storage.list_movies(user_id)
     if movie_name in movies:
             raise ValueError(f"Movie '{movie_name}' already exists.")
     try:
@@ -108,10 +109,10 @@ def add_movie(movie_name: str) -> None:
     poster_image_url = movie_data.get("Poster", "Unknown")
     if movie_title == "Unknown" or movie_year == "Unknown" or movie_rating == "Unknown":
         raise ValueError("Movie data not found. Please check the movie name.")
-    storage.add_movie(movie_title, movie_year, movie_rating, poster_image_url)
+    storage.add_movie(movie_title, movie_year, movie_rating, poster_image_url, user_id)
 
 
-def delete_movie(movie_name: str) -> None:
+def delete_movie(movie_name: str, user_id: int) -> None:
     """
     Delete a movie and its rating from the movie database, if it exists.
 
@@ -126,30 +127,10 @@ def delete_movie(movie_name: str) -> None:
     """
     if not movie_name:
         raise ValueError("Movie name must be provided.")
-    storage.delete_movie(movie_name)
+    storage.delete_movie(movie_name, user_id)
 
 
-def update_movie(movie_name: str, new_movie_rating: float) -> None:
-    """
-    Update the rating of a movie in the movie database.
-
-    Args:
-        movie_name: The name of the movie.
-        new_movie_rating: The new rating of the movie.
-
-    Returns:
-        None
-
-    Raises:
-        ValueError: If movie name or new rating is empty.
-
-    """
-    if not movie_name or not new_movie_rating:
-        raise ValueError("Movie name and new rating must be provided.")
-    storage.update_movie(movie_name, new_movie_rating)
-
-
-def movies_stats() -> tuple:
+def movies_stats(user_id: int) -> tuple:
     """
     Return statistical information about the movie database, including
     the average rating, median rating, best and worst movies.
@@ -163,8 +144,8 @@ def movies_stats() -> tuple:
     Raises:
         ValueError: If the movie database is empty.
     """
-    
-    dict_of_movies = storage.list_movies()
+
+    dict_of_movies = storage.list_movies(user_id)
     if not dict_of_movies:
         raise ValueError("No movies found.")
     ratings = list((data["rating"] for movie, data in dict_of_movies.items()))
@@ -189,7 +170,7 @@ def movies_stats() -> tuple:
     return average_rating, best_movies, worst_movies, median_rating
 
 
-def get_random_movie() -> dict:
+def get_random_movie(user_id: int) -> dict:
     """
     Return a random movie dict from the list of dictionaries of movies.
 
@@ -199,7 +180,7 @@ def get_random_movie() -> dict:
     Raises:
         ValueError: If the database is empty.
     """
-    dicts_of_movies = storage.list_movies()
+    dicts_of_movies = storage.list_movies(user_id)
     if not dicts_of_movies:
         raise ValueError("No movies found in the database.")
     title, details = random.choice(list(dicts_of_movies.items()))
@@ -208,7 +189,7 @@ def get_random_movie() -> dict:
     return {'title': title, **details}
 
 
-def search_movie(part_of_movie_name: str) -> list[dict]:
+def search_movie(part_of_movie_name: str, user_id: int) -> list[dict]:
     """
     Return all movies containing the input string, case-insensitive.
 
@@ -221,13 +202,13 @@ def search_movie(part_of_movie_name: str) -> list[dict]:
     Raises:
         ValueError: If the database is empty.
     """
-    list_of_movie_dicts = storage.search_movie(part_of_movie_name)
+    list_of_movie_dicts = storage.search_movie(part_of_movie_name, user_id)
     if not list_of_movie_dicts:
         raise ValueError("No movies found with that name.")
     return list_of_movie_dicts
 
 
-def sort_movies_by_rating() -> list[dict]:
+def sort_movies_by_rating(user_id: int) -> list[dict]:
     """
     Sort movies by rating in descending order.
 
@@ -237,13 +218,103 @@ def sort_movies_by_rating() -> list[dict]:
     Raises:
         ValueError: If the dictionary is empty.
     """
-    sorted_movie_list =  storage.sort_movies_by_rating()
+    sorted_movie_list =  storage.sort_movies_by_rating(user_id)
     if not sorted_movie_list:
         raise ValueError("No movies found to sort.")
     return sorted_movie_list
 
 
-def get_website_name() -> str:
+def get_profiles() -> list[str]:
+    """
+    Get all available profiles in the movie database.
+
+    Returns:
+        list[str]: A list of profile names.
+    
+    Raises:
+        ValueError: If no profiles are found.
+    """
+    with open("data/profiles.txt", "r") as file:
+        profiles = [line.strip() for line in file if line.strip()]
+    if not profiles:
+        return []
+    return profiles
+
+
+def list_profiles() -> list[str]:
+    """
+    List all available profiles in the movie database.
+
+    Returns:
+        list[str]: A list of profile names.
+    
+    Raises:
+        ValueError: If no profiles are found.
+    """
+    try:
+        profiles = get_profiles()
+        if not profiles:
+            return []
+        print("Available profiles:")
+        for i, profile in enumerate(profiles, start=1):
+            print(f"{i}. {profile}")
+    except ValueError as e:
+        print(f"Error: {e}")
+        return []
+    
+
+def create_new_profile() -> None:
+    """
+    Create a new profile for the movie database.
+
+    Args:
+        profile_name (str): The name of the new profile.
+
+    Returns:
+        None
+    """
+    with open("data/profiles.txt", "a") as file:
+        new_profile = get_name()
+        file.write(f"{new_profile}\n")
+        print(f"Profile '{new_profile}' created successfully.")
+        return new_profile
+
+
+def select_profile() -> str:
+    """
+    Select a profile for the movie database.
+
+    Returns:
+        str: The name of the selected profile.
+    
+    Raises:
+        ValueError: If no profile is selected.
+    """
+    while True:
+
+        profiles = get_profiles()
+        list_profiles()
+    
+        if not profiles:
+            print("No profiles found. Please create a new profile.")
+            return create_new_profile()
+        else:
+            choice = input(f"Select a profile by number (0-{len(profiles)}) or 0 to create a new one: ").strip()
+            if choice.isdigit() and 1 <= int(choice) <= len(profiles):
+                return profiles[int(choice) - 1]
+            elif choice == "0":
+                return create_new_profile()
+            else:
+                print("Invalid choice. Please select a valid profile number.")
+
+
+def change_profile() -> str:
+    profile = select_profile()
+    storage.init_storage()
+    return profile
+
+
+def get_name() -> str:
     """
     Get the name of the website from the user.
 
@@ -254,13 +325,13 @@ def get_website_name() -> str:
         ValueError: If the name is empty.
     """
     while True:
-        name = input("Enter the name of the website: ").strip()
+        name = input("Enter your name: ").strip()
         if not name:
-            raise ValueError("Website name cannot be empty.")
+            raise ValueError("Your name cannot be empty.")
         return name
 
 
-def generate_website(name: str) -> None:
+def generate_website(name: str, user_id: int) -> None:
     """
     Generate a static HTML website for the movie database.
 
@@ -276,14 +347,14 @@ def generate_website(name: str) -> None:
 
     base_dir = os.path.dirname(__file__)  # directory of the current script
     template_path = os.path.join(base_dir, "website", "index_template.html")
-    index_path = os.path.join(base_dir, "website", "index.html")
+    index_path = os.path.join(base_dir, "website", f"{name}.html")
 
     if not os.path.exists(template_path):
         raise FileNotFoundError(f"Template file not found: {template_path}")
 
     with open(template_path, "r") as file:
         template = file.read()
-    dict_of_movies = storage.list_movies()
+    dict_of_movies = storage.list_movies(user_id)
 
     if not dict_of_movies:
         raise ValueError("No movies found in the database to generate a website.")
@@ -299,13 +370,12 @@ def generate_website(name: str) -> None:
         </li>
         """
     html_content = template.replace("__TEMPLATE_MOVIE_GRID__", movies_html)
-    html_content = html_content.replace("__TEMPLATE_TITLE__", name)
+    html_content = html_content.replace("__TEMPLATE_TITLE__", f"Movie Database of {name}")
     with open(index_path, "w") as file:
         file.write(html_content)
-    print("Website generated successfully at /website/index.html.")
+    print(f"Website generated successfully at /website/{name}.html.")
     pause()
         
-
 
 def main():
     """
@@ -313,26 +383,33 @@ def main():
     and performs operations based on user input.
     """
     print("Welcome to the Movie Database CLI!")
-    websitename = get_website_name()
-    menu_text = f"""
-        ********** {websitename} **********
+
+    if not os.path.exists("data/profiles.txt"):
+        with open("data/profiles.txt", "w") as file:
+            file.write("")
+    current_profile = change_profile()
+    user_id = storage.get_or_create_user(current_profile)
+
+    while True:
+        menu_text = f"""
+        ********** Movie Database of {current_profile} **********
 
         Menu:
         0. Quit
         1. List movies
         2. Add movie
         3. Delete movie
-        4. Update movie
-        5. Stats
-        6. Random movie
-        7. Search movie
-        8. Movies sorted by rating
-        9. Generate website
+        4. Stats
+        5. Random movie
+        6. Search movie
+        7. Movies sorted by rating
+        8. Generate website
+        9. Change profile
 
         Enter choice (0-9):
 
         """
-    while True:
+
         user_choice = input(menu_text)
 
         if user_choice == "0":
@@ -343,7 +420,7 @@ def main():
 
         elif user_choice == "1":
             try:
-                list_movies()
+                list_movies(user_id)
             except ValueError as v_e:
                 print(f"Error: {v_e}")
             except KeyError as k_e:
@@ -360,7 +437,7 @@ def main():
                 else:
                     print("Invalid input. You have to enter a movie name.")
             try:
-                add_movie(movie_name)
+                add_movie(movie_name, user_id)
             except ValueError as v_e:
                 print(f"Error: {v_e}")
             except KeyError as k_e:
@@ -376,34 +453,18 @@ def main():
                     print("Deletion cancelled.")
                     continue
                 # Call the delete_movie function to remove the movie from the database
-                delete_movie(movie_name)
+                delete_movie(movie_name, user_id)
 
             except KeyError as k_e:
                 print(f"Error: {k_e}")
 
             finally:
                 pause()
+
 
         elif user_choice == "4":
             try:
-                movie_name = get_valid_name()
-                input_new_rating = get_valid_rating()
-                update_movie(movie_name, input_new_rating)
-                print(f"Movie '{movie_name}' successfully updated.")
-
-            except KeyError as k_e:
-                print(f"Error: {k_e}")
-
-            except ValueError as v_e:
-                print(f"Error: {v_e}")
-
-            finally:
-                pause()
-
-
-        elif user_choice == "5":
-            try:
-                average_rating, best_movies, worst_movies, median_rating = movies_stats()
+                average_rating, best_movies, worst_movies, median_rating = movies_stats(user_id)
                 print(f"Average rating: {average_rating}")
                 print(f"Median rating: {median_rating}")
                 print(f"Best movie(s):")
@@ -419,9 +480,9 @@ def main():
             finally:
                 pause()
 
-        elif user_choice == "6":
+        elif user_choice == "5":
             try:
-                random_movie = get_random_movie()
+                random_movie = get_random_movie(user_id)
                 print(f"Your movie for tonight: {random_movie['title']},"
                       f" it's rated {random_movie['rating']}.")
 
@@ -432,7 +493,7 @@ def main():
             finally:
                 pause()
 
-        elif user_choice == "7":
+        elif user_choice == "6":
             try:
                 while True:
                     part_of_movie_name = input("Enter a part of the movie name: ")
@@ -440,7 +501,7 @@ def main():
                         break
                     else:
                         print("You have to enter a part of the movie name.")
-                list_of_movies_with_part_in_it = search_movie(part_of_movie_name)
+                list_of_movies_with_part_in_it = search_movie(part_of_movie_name, user_id)
                 for movie in list_of_movies_with_part_in_it:
                     print(f"{movie['title']}: {movie['rating']}")
 
@@ -453,9 +514,9 @@ def main():
             finally:
                 pause()
 
-        elif user_choice == "8":
+        elif user_choice == "7":
             try:
-                movies_sorted_by_rating = sort_movies_by_rating()
+                movies_sorted_by_rating = sort_movies_by_rating(user_id)
                 for movie in movies_sorted_by_rating:
                     print(f"{movie['title']}: {movie['rating']}")
 
@@ -465,11 +526,15 @@ def main():
             finally:
                 pause()
 
+        elif user_choice == "8":
+            generate_website(current_profile, user_id)
+
         elif user_choice == "9":
-            generate_website(websitename)
+            current_profile = change_profile()
+            user_id = storage.get_or_create_user(current_profile)
 
         else:
-            print("Invalid choice. Please choose a number between 0 and 10.")
+            print("Invalid choice. Please choose a number between 0 and 9.")
             pause()
 
 
