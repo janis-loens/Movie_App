@@ -1,4 +1,4 @@
-# 🎬 Movie App – Janis' Filme-Abend
+# 🎬 Movie App
 
 A Python-based movie manager that lets you add, search, update, delete, and view your favorite films using the OMDb API. Data is stored in an SQLite database and visually presented with a clean HTML layout.
 
@@ -22,8 +22,8 @@ A Python-based movie manager that lets you add, search, update, delete, and view
 ## 📦 Installation
 
 ```bash
-git clone https://github.com/yourusername/movie-app.git
-cd movie-app
+git clone https://github.com/janis-loens/Movie_App.git
+cd Movie_App
 python -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
 pip install -r requirements.txt
