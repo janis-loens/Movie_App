@@ -365,6 +365,7 @@ def generate_website(name: str, user_id: int) -> None:
             <div class="movie">
                 <img class="movie-poster" src="{data['poster_image_url']}" alt="{movie} poster">
                 <div class="movie-title">{movie}</div>
+                <div class="movie-rating">IMDb: {data['rating']}</div>
                 <div class="movie-year">{data['year']}</div>
             </div>
         </li>
